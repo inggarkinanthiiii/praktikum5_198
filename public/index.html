@@ -1,131 +1,94 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="id">
 <head>
     <meta charset="UTF-8">
-    <title>Praktikum API Key</title>
-    <style>
-        /* Reset sederhana */
-        * {
-            margin: 0;
-            padding: 0;
-            box-sizing: border-box;
-            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-        }
-
-        body {
-            background: linear-gradient(135deg, #667eea, #764ba2);
-            min-height: 100vh;
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            color: #fff;
-        }
-
-        .container {
-            background-color: rgba(255, 255, 255, 0.1);
-            padding: 30px 40px;
-            border-radius: 15px;
-            text-align: center;
-            box-shadow: 0 8px 20px rgba(0, 0, 0, 0.3);
-            width: 450px;
-        }
-
-        h1, h2 {
-            margin-bottom: 20px;
-            font-weight: 600;
-        }
-
-        button {
-            background-color: #ff6b81;
-            border: none;
-            color: #fff;
-            padding: 12px 20px;
-            border-radius: 8px;
-            cursor: pointer;
-            font-size: 16px;
-            margin: 10px 0;
-            transition: all 0.3s ease;
-        }
-
-        button:hover {
-            background-color: #ff4757;
-            transform: translateY(-2px);
-            box-shadow: 0 5px 15px rgba(0,0,0,0.2);
-        }
-
-        .key-container {
-            display: flex;
-            align-items: center;
-            justify-content: space-between;
-            margin-top: 15px;
-            background-color: rgba(0,0,0,0.2);
-            padding: 10px;
-            border-radius: 8px;
-        }
-
-        .key-container span {
-            word-break: break-all;
-            font-weight: bold;
-            flex: 1;
-        }
-
-        pre#dataDisplay {
-            margin-top: 15px;
-            text-align: left;
-            background-color: rgba(0,0,0,0.2);
-            padding: 15px;
-            border-radius: 8px;
-            max-height: 200px;
-            overflow-y: auto;
-        }
-
-    </style>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>API Generator Pro</title>
+    <link rel="stylesheet" href="style.css">
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;600;700&family=Roboto+Mono:wght@400;500&display=swap" rel="stylesheet">
 </head>
 <body>
     <div class="container">
-        <h1>🔑 Generate API Key</h1>
-        <button id="generateBtn">Generate API Key</button>
-        <div class="key-container">
-            <span id="keyDisplay">Belum ada API Key</span>
-            <button id="copyBtn">Salin</button>
-        </div>
+        <header>
+            <h1>API Generator</h1>
+        </header>
 
-        <h2>📊 Ambil Data</h2>
-        <button id="getDataBtn">Ambil Data</button>
-        <pre id="dataDisplay">{}</pre>
+        <main>
+            <section class="generator-section">
+                <button id="generateApiBtn">Buat API</button>
+                <div class="result-box">
+                    <textarea id="apiResult" readonly placeholder="Hasil API akan muncul di sini..."></textarea>
+                    <button id="copyToClipboardBtn" class="copy-button">Salin</button>
+                </div>
+            </section>
+        </main>
+
+        <footer>
+            <p>&copy; 2023 API Generator. All rights reserved.</p>
+        </footer>
     </div>
 
     <script>
-        let apiKey = "";
+    // 1. Fungsi Asynchronous untuk Memanggil Endpoint Express
+    async function generateApiKey() {
+        const resultTextarea = document.getElementById('apiResult');
+        const generateBtn = document.getElementById('generateApiBtn');
+        
+        // Tunjukkan bahwa server sedang bekerja
+        resultTextarea.value = "Sedang menghubungi server Express...";
+        generateBtn.disabled = true; // Nonaktifkan tombol saat proses
 
-        const keyDisplay = document.getElementById("keyDisplay");
-        const copyBtn = document.getElementById("copyBtn");
-
-        document.getElementById("generateBtn").addEventListener("click", async () => {
-            const res = await fetch("/generate-key", { method: "POST" });
-            const data = await res.json();
-            apiKey = data.apiKey;
-            keyDisplay.innerText = apiKey;
-        });
-
-        copyBtn.addEventListener("click", () => {
-            if (!apiKey) return alert("Belum ada API Key untuk disalin!");
-            navigator.clipboard.writeText(apiKey)
-                .then(() => alert("API Key berhasil disalin!"))
-                .catch(() => alert("Gagal menyalin API Key."));
-        });
-
-        document.getElementById("getDataBtn").addEventListener("click", async () => {
-            if (!apiKey) {
-                alert("Silakan generate API Key terlebih dahulu!");
-                return;
-            }
-            const res = await fetch("/data", {
-                headers: { "x-api-key": apiKey }
+        try {
+            // Panggil endpoint POST /create di server Express Anda
+            const response = await fetch('/create', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                }
+                // Tidak perlu body, karena server Anda tidak memerlukannya
             });
-            const data = await res.json();
-            document.getElementById("dataDisplay").innerText = JSON.stringify(data, null, 2);
-        });
-    </script>
+
+            if (!response.ok) {
+                // Tangani respons HTTP yang gagal (misalnya 404 atau 500)
+                throw new Error(`Gagal dari server: Status ${response.status}`);
+            }
+
+            // Ambil data JSON dari server
+            const data = await response.json(); 
+            
+            // Tampilkan API Key yang sebenarnya dari server
+            const apiKey = data.apiKey || 'Error: Key tidak ditemukan.';
+            
+            // Format output agar terlihat seperti respons API sungguhan
+            resultTextarea.value = 
+
+` ${apiKey},
+  "created_at": "${new Date().toISOString()}"`;
+
+        } catch (error) {
+            // Tangani kegagalan jaringan atau server mati
+            console.error("Gagal membuat API Key:", error);
+            resultTextarea.value = `❌ KONEKSI GAGAL! Pastikan server Express (index.js) sedang berjalan. Detail: ${error.message}`;
+        } finally {
+            generateBtn.disabled = false; // Aktifkan kembali tombol
+        }
+    }
+
+    // 2. Listener untuk Tombol 'Buat API'
+    document.getElementById('generateApiBtn').addEventListener('click', generateApiKey);
+
+    // 3. Listener untuk Tombol 'Salin'
+    document.getElementById('copyToClipboardBtn').addEventListener('click', () => {
+        const resultTextarea = document.getElementById('apiResult');
+        
+        // Pilih seluruh teks
+        resultTextarea.select(); 
+        
+        // Untuk dukungan browser yang lebih luas (meskipun sudah usang)
+        document.execCommand('copy'); 
+        
+        alert('API Key berhasil disalin!');
+    });
+</script>
 </body>
 </html>
